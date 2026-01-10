@@ -59,6 +59,7 @@ func LoadTable(path string, logger *slog.Logger) (*engine.Table, error) {
 		Schema:      schema,
 		Rows:        rows,
 		Indexes:     make(map[string]*engine.Index),
+		LastInsertID: meta.LastInsertID,
 	}
 	logger.Info("table loaded",
 		slog.String("table", table.Name),

@@ -6,4 +6,6 @@ type Table struct {
 	Schema *TableSchema
 	Rows [] Row
 	Indexes map[string] *Index
+	LastInsertID int64
+	RowCount int64
 }

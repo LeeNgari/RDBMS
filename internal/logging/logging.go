@@ -60,8 +60,8 @@ func SetupLogger() (*slog.Logger, func()) {
 	// Seq handler
 	_, seqHandler := slogseq.NewLogger(
 		"http://localhost:5341",
-		slogseq.WithBatchSize(10),
-		slogseq.WithFlushInterval(2*time.Second),
+		slogseq.WithBatchSize(1),
+		slogseq.WithFlushInterval(500*time.Millisecond),
 		slogseq.WithHandlerOptions(&slog.HandlerOptions{
 			Level:     slog.LevelDebug,
 			AddSource: true,
