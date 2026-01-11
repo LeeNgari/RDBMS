@@ -15,7 +15,7 @@ func SelectAll(table *schema.Table) []data.Row {
 	return rows
 }
 
-// PredicateFunc is a function that tests whether a row matches certain criteria
+
 type PredicateFunc func(data.Row) bool
 
 // SelectWhere returns rows that match the given predicate

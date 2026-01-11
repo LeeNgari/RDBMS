@@ -29,7 +29,7 @@ func Insert(table *schema.Table, mutRow data.Row) error {
 		// Generate next ID
 		nextID := table.LastInsertID + 1
 
-		// Allow user to override auto-increment (for imports, migrations, etc.)
+		// Allow user to override auto-increment 
 		if val, exists := row[autoIncCol.Name]; exists {
 			userID, ok := normalizeToInt64(val)
 			if !ok {

@@ -2,6 +2,7 @@
   "name": "testdb",
   "version": 1,
   "tables": [
-    "users"
+    "users",
+    "orders"
   ]
 }

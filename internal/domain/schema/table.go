@@ -7,9 +7,8 @@ import (
 )
 
 // Table represents a database table with its schema, data, and indexes
-// Note: Table operations are thread-safe via mutex
 type Table struct {
-	mu           sync.RWMutex // protects all fields below
+	mu           sync.RWMutex
 	Name         string
 	Path         string // filesystem path to table directory
 	Schema       *TableSchema
