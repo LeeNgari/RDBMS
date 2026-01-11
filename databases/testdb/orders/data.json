@@ -1,6 +1,26 @@
 [
-  {"id": 1, "user_id": 2, "product": "laptop", "amount": 999.99},
-  {"id": 2, "user_id": 2, "product": "mouse", "amount": 29.99},
-  {"id": 3, "user_id": 5, "product": "keyboard", "amount": 79.99},
-  {"id": 4, "user_id": 6, "product": "monitor", "amount": 299.99}
+  {
+    "amount": 999.99,
+    "id": 1,
+    "product": "laptop",
+    "user_id": 2
+  },
+  {
+    "amount": 29.99,
+    "id": 2,
+    "product": "mouse",
+    "user_id": 2
+  },
+  {
+    "amount": 79.99,
+    "id": 3,
+    "product": "keyboard",
+    "user_id": 5
+  },
+  {
+    "amount": 299.99,
+    "id": 4,
+    "product": "monitor",
+    "user_id": 6
+  }
 ]
