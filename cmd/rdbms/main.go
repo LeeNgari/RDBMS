@@ -42,24 +42,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Get users table
-	usersTable, ok := db.Tables["users"]
-	if !ok {
-		slog.Error("table 'users' not found")
-		closeFn()
-		os.Exit(1)
-	}
+	slog.Info("Database loaded successfully",
+		"name", db.Name,
+		"tables", len(db.Tables),
+	)
 
-	// Run CRUD operation tests
-	testCRUDOperations(usersTable)
-
-	// Check if orders table exists for JOIN tests
-	if ordersTable, ok := db.Tables["orders"]; ok {
-		testJoinOperations(usersTable, ordersTable)
-	} else {
-		slog.Warn("orders table not found - skipping JOIN tests")
-		slog.Info("To test JOINs, create databases/testdb/orders/ with meta.json and data.json")
-	}
-
-	slog.Info("Application ready - all operations tested!")
+	// Application is ready
+	// Run integration tests with: go test ./internal/integration_test/...
+	slog.Info("Application ready!")
+	slog.Info("To run integration tests: go test ./internal/integration_test/... -v")
 }
