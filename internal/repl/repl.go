@@ -1,1 +1,106 @@
 package repl
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+	"text/tabwriter"
+
+	"github.com/leengari/mini-rdbms/internal/domain/schema"
+	"github.com/leengari/mini-rdbms/internal/executor"
+	"github.com/leengari/mini-rdbms/internal/parser"
+	"github.com/leengari/mini-rdbms/internal/parser/lexer"
+)
+
+func Start(db *schema.Database) {
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("Welcome to M")
+	fmt.Println("Type 'exit' or '\\q' to quit.")
+
+	for {
+		fmt.Print("> ")
+		if !scanner.Scan() {
+			return
+		}
+		line := scanner.Text()
+
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		if line == "exit" || line == "\\q" {
+			break
+		}
+
+		// Tokenize
+		tokens, err := lexer.Tokenize(line)
+		if err != nil {
+			fmt.Printf("Lexer Error: %v\n", err)
+			continue
+		}
+
+		// Parse
+		p := parser.New(tokens)
+		stmt, err := p.Parse()
+		if err != nil {
+			fmt.Printf("Parse Error: %v\n", err)
+			continue
+		}
+
+		// Execute
+		result, err := executor.Execute(stmt, db)
+		if err != nil {
+			fmt.Printf("Execution Error: %v\n", err)
+			continue
+		}
+
+		// Print Result
+		printResult(result)
+	}
+}
+
+func printResult(res *executor.Result) {
+	if res.Message != "" {
+		fmt.Println(res.Message)
+	}
+
+	if len(res.Rows) > 0 || len(res.Columns) > 0 {
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		
+		// Header
+		for i, col := range res.Columns {
+			fmt.Fprintf(w, "%s", col)
+			if i < len(res.Columns)-1 {
+				fmt.Fprintf(w, "\t")
+			}
+		}
+		fmt.Fprintln(w)
+
+		// Separator
+		for i := range res.Columns {
+			fmt.Fprintf(w, "---")
+			if i < len(res.Columns)-1 {
+				fmt.Fprintf(w, "\t")
+			}
+		}
+		fmt.Fprintln(w)
+
+		// Rows
+		for _, row := range res.Rows {
+			for i, col := range res.Columns {
+				val, ok := row[col]
+				if !ok {
+					fmt.Fprintf(w, "NULL")
+				} else {
+					fmt.Fprintf(w, "%v", val)
+				}
+				if i < len(res.Columns)-1 {
+					fmt.Fprintf(w, "\t")
+				}
+			}
+			fmt.Fprintln(w)
+		}
+		w.Flush()
+	}
+}

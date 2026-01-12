@@ -16,5 +16,11 @@
     "id": 6,
     "is_active": true,
     "username": "frank"
+  },
+  {
+    "email": "repl@test.com",
+    "id": 18,
+    "is_active": true,
+    "username": "repl_user"
   }
 ]

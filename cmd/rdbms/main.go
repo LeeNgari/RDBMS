@@ -9,6 +9,7 @@ import (
 	"github.com/leengari/mini-rdbms/internal/query/indexing"
 	"github.com/leengari/mini-rdbms/internal/storage/loader"
 	"github.com/leengari/mini-rdbms/internal/storage/writer"
+	"github.com/leengari/mini-rdbms/internal/repl"
 )
 
 func main() {
@@ -50,5 +51,7 @@ func main() {
 	// Application is ready
 	// Run integration tests with: go test ./internal/integration_test/...
 	slog.Info("Application ready!")
-	slog.Info("To run integration tests: go test ./internal/integration_test/... -v")
+	slog.Info("Starting REPL mode...")
+	
+	repl.Start(db)
 }
