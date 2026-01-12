@@ -65,3 +65,19 @@ func AssertNotNullValue(t *testing.T, value interface{}, context string) {
 		t.Errorf("%s: expected non-NULL value, got nil", context)
 	}
 }
+
+// AssertJoinedColumnExists checks if a column exists in a JoinedRow
+func AssertJoinedColumnExists(t *testing.T, row map[string]interface{}, column, context string) {
+	t.Helper()
+	if _, exists := row[column]; !exists {
+		t.Errorf("%s: expected column '%s' to exist", context, column)
+	}
+}
+
+// AssertJoinedColumnNotExists checks if a column does not exist in a JoinedRow
+func AssertJoinedColumnNotExists(t *testing.T, row map[string]interface{}, column, context string) {
+	t.Helper()
+	if _, exists := row[column]; exists {
+		t.Errorf("%s: did not expect column '%s' to exist", context, column)
+	}
+}

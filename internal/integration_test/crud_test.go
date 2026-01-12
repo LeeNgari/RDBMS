@@ -98,6 +98,29 @@ func TestCRUDOperations(t *testing.T) {
 		}
 	})
 
+	t.Run("Insert", func(t *testing.T) {
+		// Insert a new user
+		newUser := data.Row{
+			"id":       int64(100),
+			"username": "newuser",
+			"email":    "new@example.com",
+		}
+		
+		err := crud.Insert(usersTable, newUser)
+		testutil.AssertNoError(t, err, "Insert operation")
+		
+		// Verify insertion
+		row, found := crud.SelectByUniqueIndex(usersTable, "id", int64(100), nil)
+		if !found {
+			t.Error("Expected to find newly inserted user")
+		}
+		if row != nil {
+			if username, ok := row["username"].(string); !ok || username != "newuser" {
+				t.Errorf("Expected username 'newuser', got '%v'", row["username"])
+			}
+		}
+	})
+
 	t.Run("Update", func(t *testing.T) {
 		// Update a user's email
 		updated, err := crud.Update(usersTable, func(row data.Row) bool {
@@ -119,6 +142,36 @@ func TestCRUDOperations(t *testing.T) {
 		}
 		if email, ok := row["email"].(string); !ok || email != "newemail@example.com" {
 			t.Errorf("Expected email to be updated, got: %v", row["email"])
+		}
+	})
+
+	t.Run("Delete", func(t *testing.T) {
+		// Get initial count
+		initialRows := crud.SelectAll(usersTable, nil)
+		initialCount := len(initialRows)
+		
+		// Delete the user we inserted
+		deleted, err := crud.Delete(usersTable, func(row data.Row) bool {
+			id, ok := row["id"].(int64)
+			return ok && id == int64(100)
+		})
+		
+		testutil.AssertNoError(t, err, "Delete operation")
+		if deleted == 0 {
+			t.Error("Expected to delete at least 1 row")
+		}
+		
+		// Verify deletion
+		finalRows := crud.SelectAll(usersTable, nil)
+		if len(finalRows) != initialCount-deleted {
+			t.Errorf("Expected %d rows after delete, got %d", 
+				initialCount-deleted, len(finalRows))
+		}
+		
+		// Verify user no longer exists
+		_, found := crud.SelectByUniqueIndex(usersTable, "id", int64(100), nil)
+		if found {
+			t.Error("Expected user to be deleted")
 		}
 	})
 }

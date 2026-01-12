@@ -29,7 +29,7 @@ func SaveTable(t *schema.Table) error {
 	meta := metadata.TableMeta{
 		Name:         tableName,
 		LastInsertID: t.LastInsertID,
-		RowCount:     int64(len(t.Rows)), // Calculate from actual rows
+		RowCount:     int64(len(t.Rows)), 
 		Columns:      make([]metadata.ColumnMeta, len(t.Schema.Columns)),
 	}
 
@@ -112,12 +112,12 @@ func SaveDatabase(db *schema.Database) error {
 	for name := range db.Tables {
 		tableNames = append(tableNames, name)
 	}
-	sort.Strings(tableNames) // Deterministic order
+	sort.Strings(tableNames) 
 
 	// 3. Create database metadata
 	dbMeta := metadata.DatabaseMeta{
 		Name:    db.Name,
-		Version: 1, // Could be incremented for schema migrations
+		Version: 1, 
 		Tables:  tableNames,
 	}
 

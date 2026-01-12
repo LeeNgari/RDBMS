@@ -9,6 +9,9 @@ import (
 	"github.com/leengari/mini-rdbms/internal/domain/schema"
 )
 
+// JoinPredicate tests whether a joined row matches certain criteria
+type JoinPredicate func(data.JoinedRow) bool
+
 // ExecuteJoin performs a JOIN operation with the specified type
 // This is the unified API for all JOIN types (INNER, LEFT, RIGHT, FULL)
 // Supports optional predicate filtering and column projection
@@ -59,7 +62,7 @@ func ExecuteJoin(
 	return results, nil
 }
 
-// executeInnerJoin performs INNER JOIN (extracted from original Join function)
+// executeInnerJoin performs INNER JOIN 
 func executeInnerJoin(
 	leftTable *schema.Table,
 	rightTable *schema.Table,
