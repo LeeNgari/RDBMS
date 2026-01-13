@@ -255,7 +255,7 @@ func (p *Parser) parseUpdate() (*ast.UpdateStatement, error) {
 		var colName string
 		if p.curTok.Type == lexer.IDENTIFIER {
 			colName = p.curTok.Literal
-		} else if p.curTok.Type == lexer.EMAIL || p.curTok.Type == lexer.DATE || p.curTok.Type == lexer.TIME {
+		} else if isTypedLiteralKeyword(p.curTok.Type) {
 			// Allow EMAIL, DATE, TIME as column names
 			colName = strings.ToLower(p.curTok.Literal)
 		} else {
@@ -364,8 +364,7 @@ func (p *Parser) parseIdentifierList() ([]*ast.Identifier, error) {
 	}
 
 	// Parse first identifier (could be IDENTIFIER or keyword like EMAIL/DATE/TIME)
-	if p.curTok.Type != lexer.IDENTIFIER && p.curTok.Type != lexer.EMAIL && 
-	   p.curTok.Type != lexer.DATE && p.curTok.Type != lexer.TIME {
+	if !isIdentifierOrKeyword(p.curTok.Type) {
 		return nil, fmt.Errorf("expected identifier, got %s", p.curTok.Literal)
 	}
 
@@ -403,8 +402,7 @@ func (p *Parser) parseIdentifierList() ([]*ast.Identifier, error) {
 // Also handles EMAIL, DATE, TIME keywords when used as column names.
 func (p *Parser) parseQualifiedIdentifier() (*ast.Identifier, error) {
 	// Accept IDENTIFIER or keywords (EMAIL, DATE, TIME) as column names
-	if p.curTok.Type != lexer.IDENTIFIER && p.curTok.Type != lexer.EMAIL && 
-	   p.curTok.Type != lexer.DATE && p.curTok.Type != lexer.TIME {
+	if !isIdentifierOrKeyword(p.curTok.Type) {
 		return nil, fmt.Errorf("expected identifier, got %s", p.curTok.Literal)
 	}
 
@@ -548,16 +546,6 @@ func (p *Parser) parseComparisonExpression() (ast.Expression, error) {
 	}
 
 	return left, nil
-}
-
-// isComparisonOperator checks if a token type is a comparison operator
-func isComparisonOperator(t lexer.TokenType) bool {
-	return t == lexer.EQUALS ||
-		t == lexer.LESS_THAN ||
-		t == lexer.GREATER_THAN ||
-		t == lexer.LESS_EQUAL ||
-		t == lexer.GREATER_EQUAL ||
-		t == lexer.NOT_EQUAL
 }
 
 func (p *Parser) parseAtom() (ast.Expression, error) {
