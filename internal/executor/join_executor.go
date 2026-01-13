@@ -78,15 +78,26 @@ func executeJoinSelect(stmt *ast.SelectStatement, db *schema.Database) (*Result,
 	// Build projection
 	var proj *projection.Projection
 	var columns []string
+	var metadata []ColumnMetadata
 
 	if len(stmt.Fields) == 1 && stmt.Fields[0].Value == "*" {
 		proj = projection.NewProjection()
 		// Get all columns from both tables
 		for _, col := range leftTable.Schema.Columns {
-			columns = append(columns, leftTableName+"."+col.Name)
+			colName := leftTableName + "." + col.Name
+			columns = append(columns, colName)
+			metadata = append(metadata, ColumnMetadata{
+				Name: colName,
+				Type: string(col.Type),
+			})
 		}
 		for _, col := range rightTable.Schema.Columns {
-			columns = append(columns, rightTableName+"."+col.Name)
+			colName := rightTableName + "." + col.Name
+			columns = append(columns, colName)
+			metadata = append(metadata, ColumnMetadata{
+				Name: colName,
+				Type: string(col.Type),
+			})
 		}
 	} else {
 		proj = &projection.Projection{
@@ -99,7 +110,37 @@ func executeJoinSelect(stmt *ast.SelectStatement, db *schema.Database) (*Result,
 			} else {
 				proj.Columns[i] = projection.ColumnRef{Column: f.Value}
 			}
-			columns = append(columns, f.String())
+			colName := f.String()
+			columns = append(columns, colName)
+			
+			// Look up type from schema - check which table the column belongs to
+			var schemaCol *schema.Column
+			if f.Table != "" {
+				// Qualified column - look in specified table
+				if f.Table == leftTableName {
+					schemaCol = findColumnInSchema(leftTable, f.Value)
+				} else if f.Table == rightTableName {
+					schemaCol = findColumnInSchema(rightTable, f.Value)
+				}
+			} else {
+				// Unqualified column - try left table first, then right
+				schemaCol = findColumnInSchema(leftTable, f.Value)
+				if schemaCol == nil {
+					schemaCol = findColumnInSchema(rightTable, f.Value)
+				}
+			}
+			
+			if schemaCol != nil {
+				metadata = append(metadata, ColumnMetadata{
+					Name: colName,
+					Type: string(schemaCol.Type),
+				})
+			} else {
+				metadata = append(metadata, ColumnMetadata{
+					Name: colName,
+					Type: "TEXT",
+				})
+			}
 		}
 	}
 
@@ -142,8 +183,9 @@ func executeJoinSelect(stmt *ast.SelectStatement, db *schema.Database) (*Result,
 	}
 
 	return &Result{
-		Columns: columns,
-		Rows:    rows,
-		Message: fmt.Sprintf("Returned %d rows", len(rows)),
+		Columns:  columns,
+		Metadata: metadata,
+		Rows:     rows,
+		Message:  fmt.Sprintf("Returned %d rows", len(rows)),
 	}, nil
 }

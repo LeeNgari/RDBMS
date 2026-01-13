@@ -68,9 +68,15 @@ func printResult(res *executor.Result) {
 	if len(res.Rows) > 0 || len(res.Columns) > 0 {
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		
-		// Header
+		// Header - show type if metadata available
 		for i, col := range res.Columns {
-			fmt.Fprintf(w, "%s", col)
+			if i < len(res.Metadata) && res.Metadata[i].Type != "" {
+				// Show column with type
+				fmt.Fprintf(w, "%s (%s)", col, res.Metadata[i].Type)
+			} else {
+				// Just column name
+				fmt.Fprintf(w, "%s", col)
+			}
 			if i < len(res.Columns)-1 {
 				fmt.Fprintf(w, "\t")
 			}
