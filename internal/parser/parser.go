@@ -363,11 +363,13 @@ func (p *Parser) parseIdentifierList() ([]*ast.Identifier, error) {
 		p.nextToken()
 	}
 
-	if p.curTok.Type != lexer.IDENTIFIER {
+	// Parse first identifier (could be IDENTIFIER or keyword like EMAIL/DATE/TIME)
+	if p.curTok.Type != lexer.IDENTIFIER && p.curTok.Type != lexer.EMAIL && 
+	   p.curTok.Type != lexer.DATE && p.curTok.Type != lexer.TIME {
 		return nil, fmt.Errorf("expected identifier, got %s", p.curTok.Literal)
 	}
 
-	// Parse first identifier (possibly qualified)
+	// Parse first identifier (possibly qualified or keyword)
 	ident, err := p.parseQualifiedIdentifier()
 	if err != nil {
 		return nil, err
@@ -377,7 +379,8 @@ func (p *Parser) parseIdentifierList() ([]*ast.Identifier, error) {
 	// Parse remaining identifiers
 	for p.curTok.Type == lexer.COMMA {
 		p.nextToken()
-		if p.curTok.Type != lexer.IDENTIFIER {
+		if p.curTok.Type != lexer.IDENTIFIER && p.curTok.Type != lexer.EMAIL && 
+		   p.curTok.Type != lexer.DATE && p.curTok.Type != lexer.TIME {
 			return nil, fmt.Errorf("expected identifier after comma, got %s", p.curTok.Literal)
 		}
 		ident, err := p.parseQualifiedIdentifier()
@@ -397,21 +400,25 @@ func (p *Parser) parseIdentifierList() ([]*ast.Identifier, error) {
 
 // parseQualifiedIdentifier parses an identifier that may be qualified (table.column)
 // or unqualified (column). Used in SELECT field lists and other contexts.
+// Also handles EMAIL, DATE, TIME keywords when used as column names.
 func (p *Parser) parseQualifiedIdentifier() (*ast.Identifier, error) {
-	if p.curTok.Type != lexer.IDENTIFIER {
+	// Accept IDENTIFIER or keywords (EMAIL, DATE, TIME) as column names
+	if p.curTok.Type != lexer.IDENTIFIER && p.curTok.Type != lexer.EMAIL && 
+	   p.curTok.Type != lexer.DATE && p.curTok.Type != lexer.TIME {
 		return nil, fmt.Errorf("expected identifier, got %s", p.curTok.Literal)
 	}
 
-	firstPart := p.curTok.Literal
+	firstPart := strings.ToLower(p.curTok.Literal)
 	p.nextToken()
 
 	// Check for qualified identifier (table.column)
 	if p.curTok.Type == lexer.DOT {
 		p.nextToken()
-		if p.curTok.Type != lexer.IDENTIFIER {
+		if p.curTok.Type != lexer.IDENTIFIER && p.curTok.Type != lexer.EMAIL && 
+		   p.curTok.Type != lexer.DATE && p.curTok.Type != lexer.TIME {
 			return nil, fmt.Errorf("expected column name after '.', got %s", p.curTok.Literal)
 		}
-		colName := p.curTok.Literal
+		colName := strings.ToLower(p.curTok.Literal)
 		p.nextToken()
 		return &ast.Identifier{
 			TokenLiteralValue: firstPart + "." + colName,

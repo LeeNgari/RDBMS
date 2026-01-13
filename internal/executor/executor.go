@@ -101,7 +101,7 @@ func executeInsert(stmt *ast.InsertStatement, db *schema.Database) (*Result, err
 		return nil, fmt.Errorf("column count (%d) does not match value count (%d)", len(stmt.Columns), len(stmt.Values))
 	}
 
-	// Build row from values
+	// Build row from values with implicit type conversion
 	row := make(data.Row)
 	for i, col := range stmt.Columns {
 		lit, ok := stmt.Values[i].(*ast.Literal)
@@ -109,15 +109,19 @@ func executeInsert(stmt *ast.InsertStatement, db *schema.Database) (*Result, err
 			return nil, fmt.Errorf("only literals supported in VALUES")
 		}
 
-		// Validate type matches schema
+		// Get schema column
 		schemaCol := findColumnInSchema(table, col.Value)
 		if schemaCol != nil {
-			if err := validateLiteralType(lit, schemaCol.Type); err != nil {
+			// Convert literal to match schema type (implicit type detection)
+			convertedLit, err := convertLiteralToSchemaType(lit, schemaCol.Type)
+			if err != nil {
 				return nil, fmt.Errorf("column '%s': %w", col.Value, err)
 			}
+			row[col.Value] = convertedLit.Value
+		} else {
+			// Column not in schema, use value as-is
+			row[col.Value] = lit.Value
 		}
-
-		row[col.Value] = lit.Value
 	}
 
 	// Insert the row
@@ -140,15 +144,27 @@ func executeUpdate(stmt *ast.UpdateStatement, db *schema.Database) (*Result, err
 		return nil, fmt.Errorf("table not found: %s", tableName)
 	}
 
-	// Convert AST expression map to data.Row (column -> value)
-	// For now, we only support literal values in SET clause
+	// Build updates map with implicit type conversion
 	updates := make(data.Row)
-	for colName, expr := range stmt.Updates {
-		lit, ok := expr.(*ast.Literal)
+	for colName, valExpr := range stmt.Updates {
+		lit, ok := valExpr.(*ast.Literal)
 		if !ok {
-			return nil, fmt.Errorf("only literal values supported in SET clause for now")
+			return nil, fmt.Errorf("only literal values supported in UPDATE SET clause")
 		}
-		updates[colName] = lit.Value
+
+		// Get schema column
+		schemaCol := findColumnInSchema(table, colName)
+		if schemaCol != nil {
+			// Convert literal to match schema type (implicit type detection)
+			convertedLit, err := convertLiteralToSchemaType(lit, schemaCol.Type)
+			if err != nil {
+				return nil, fmt.Errorf("column '%s': %w", colName, err)
+			}
+			updates[colName] = convertedLit.Value
+		} else {
+			// Column not in schema, use value as-is
+			updates[colName] = lit.Value
+		}
 	}
 
 	// Build predicate function from WHERE clause
