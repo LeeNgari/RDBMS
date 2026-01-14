@@ -102,3 +102,129 @@ func TestParseInsert(t *testing.T) {
 		t.Errorf("Expected value 1 to be 1.23, got %v", ins.Values[1])
 	}
 }
+
+func TestParseUpdate(t *testing.T) {
+	tests := []struct {
+		name          string
+		input         string
+		expectedTable string
+		expectedCol   string
+		expectedVal   interface{}
+		hasWhere      bool
+	}{
+		{
+			name:          "UPDATE with WHERE",
+			input:         "UPDATE users SET email = 'new@test.com' WHERE id = 5;",
+			expectedTable: "users",
+			expectedCol:   "email",
+			expectedVal:   "new@test.com",
+			hasWhere:      true,
+		},
+		{
+			name:          "UPDATE without WHERE",
+			input:         "UPDATE products SET price = 99.99;",
+			expectedTable: "products",
+			expectedCol:   "price",
+			expectedVal:   99.99,
+			hasWhere:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tokens, err := lexer.Tokenize(tt.input)
+			if err != nil {
+				t.Fatalf("Lexer error: %v", err)
+			}
+
+			p := New(tokens)
+			stmt, err := p.Parse()
+			if err != nil {
+				t.Fatalf("Parse error: %v", err)
+			}
+
+			upd, ok := stmt.(*ast.UpdateStatement)
+			if !ok {
+				t.Fatalf("Expected UpdateStatement, got %T", stmt)
+			}
+
+			if upd.TableName.Value != tt.expectedTable {
+				t.Errorf("Expected table %s, got %s", tt.expectedTable, upd.TableName.Value)
+			}
+
+			expr, exists := upd.Updates[tt.expectedCol]
+			if !exists {
+				t.Fatalf("Expected column %s in updates", tt.expectedCol)
+			}
+
+			lit, ok := expr.(*ast.Literal)
+			if !ok {
+				t.Fatalf("Expected literal value, got %T", expr)
+			}
+
+			if lit.Value != tt.expectedVal {
+				t.Errorf("Expected value %v, got %v", tt.expectedVal, lit.Value)
+			}
+
+			if tt.hasWhere && upd.Where == nil {
+				t.Error("Expected WHERE clause, got nil")
+			}
+			if !tt.hasWhere && upd.Where != nil {
+				t.Error("Expected no WHERE clause, but got one")
+			}
+		})
+	}
+}
+
+func TestParseDelete(t *testing.T) {
+	tests := []struct {
+		name          string
+		input         string
+		expectedTable string
+		hasWhere      bool
+	}{
+		{
+			name:          "DELETE with WHERE",
+			input:         "DELETE FROM users WHERE active = false;",
+			expectedTable: "users",
+			hasWhere:      true,
+		},
+		{
+			name:          "DELETE without WHERE",
+			input:         "DELETE FROM temp_data;",
+			expectedTable: "temp_data",
+			hasWhere:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tokens, err := lexer.Tokenize(tt.input)
+			if err != nil {
+				t.Fatalf("Lexer error: %v", err)
+			}
+
+			p := New(tokens)
+			stmt, err := p.Parse()
+			if err != nil {
+				t.Fatalf("Parse error: %v", err)
+			}
+
+			del, ok := stmt.(*ast.DeleteStatement)
+			if !ok {
+				t.Fatalf("Expected DeleteStatement, got %T", stmt)
+			}
+
+			if del.TableName.Value != tt.expectedTable {
+				t.Errorf("Expected table %s, got %s", tt.expectedTable, del.TableName.Value)
+			}
+
+			if tt.hasWhere && del.Where == nil {
+				t.Error("Expected WHERE clause, got nil")
+			}
+			if !tt.hasWhere && del.Where != nil {
+				t.Error("Expected no WHERE clause, but got one")
+			}
+		})
+	}
+}
