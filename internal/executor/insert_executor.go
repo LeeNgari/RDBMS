@@ -17,6 +17,13 @@ func executeInsertNode(node *plan.InsertNode, ctx *ExecutionContext) (*Intermedi
 		return nil, err
 	}
 
+	// Log to WAL after successful insert
+	if ctx.WALManager != nil {
+		if err := ctx.WALManager.LogInsert(ctx.Transaction, table, node.Row); err != nil {
+			return nil, err
+		}
+	}
+
 	return &IntermediateResult{
 		Rows:   []data.Row{},
 		Schema: nil,
